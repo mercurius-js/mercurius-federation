@@ -40,7 +40,6 @@
     "graphql-ws": "^5.11.2",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3",
-    "mercurius": "^11.2.0",
     "mqemitter": "^5.0.0",
     "prettier": "^2.7.1",
     "tap": "^16.0.0",
@@ -55,6 +54,7 @@
   },
   "dependencies": {
     "@fastify/error": "^3.0.0",
-    "graphql": "^16.6.0"
+    "graphql": "^16.6.0",
+    "mercurius": "^11.2.0"
   }
 }
