@@ -906,7 +906,7 @@ test('federation supports loader for __resolveReference function', async t => {
 
   const loaders = {
     User: {
-      async __resolveReference(queries) {
+      async __resolveReference (queries) {
         t.same(queries, [
           {
             obj: {
