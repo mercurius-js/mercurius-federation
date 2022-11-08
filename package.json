@@ -1,0 +1,63 @@
+{
+  "name": "@mercurius/federation",
+  "version": "0.0.1",
+  "description": "A plugin for mercurius federation",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "lint": "npm run lint:standard && npm run lint:typescript",
+    "lint:fix": "standard --fix",
+    "lint:standard": "standard | snazzy",
+    "lint:typescript": "standard --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin test/types/*.ts",
+    "example": "node example/index.js",
+    "test": "npm run lint && npm run test:unit && npm run test:types",
+    "test:unit": "tap --jobs=1 --coverage-report=html test/*.js",
+    "test:types": "tsd",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mercurius-js/mercurius-federation"
+  },
+  "keywords": [
+    "mercurius"
+  ],
+  "author": "Davide Fiorello <davide@codeflyer.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mercurius-js/mercurius-federation/issues"
+  },
+  "homepage": "https://github.com/mercurius-js/mercurius-federation#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^17.2.0",
+    "@commitlint/config-conventional": "^17.2.0",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
+    "fastify": "^4.9.2",
+    "graphql-ws": "^5.11.2",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "mqemitter": "^5.0.0",
+    "snazzy": "^9.0.0",
+    "standard": "^17.0.0",
+    "tap": "^16.3.0",
+    "tsd": "^0.24.1",
+    "ws": "^8.11.0"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "lint-staged": {
+    "*.{js,jsx}": "standard --cache --fix"
+  },
+  "dependencies": {
+    "@fastify/error": "^3.0.0",
+    "graphql": "^16.6.0",
+    "mercurius": "^11.3.0"
+  }
+}
