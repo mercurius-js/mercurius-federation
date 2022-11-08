@@ -1,6 +1,6 @@
 # @mercurius/federation
 
-A module to add federation info to a schema.
+A module to add Apollo Federation v1 metadata info to a schema.
 
 ## Quick start
 
