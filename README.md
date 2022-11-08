@@ -1,4 +1,4 @@
-# Mercurius Federation
+# @mercurius/federation
 
 A module to add federation info to a schema.
 
