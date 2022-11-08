@@ -2,11 +2,11 @@ import { GraphQLSchema } from 'graphql'
 import { FastifyInstance } from 'fastify'
 import { MercuriusOptions } from 'mercurius'
 
-interface buildFederationSchemaOptions {
+export interface buildFederationSchemaOptions {
   isGateway?: boolean
 }
 
-type MercuriusFederationOptions = Omit<MercuriusOptions, 'schema'> & {
+export type MercuriusFederationOptions = Omit<MercuriusOptions, 'schema'> & {
   schema: string
 }
 
