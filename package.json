@@ -1,6 +1,6 @@
 {
-  "name": "@mercurius/federation",
-  "version": "0.0.1",
+  "name": "@mercuriusjs/federation",
+  "version": "0.1.0",
   "description": "A plugin for mercurius federation",
   "main": "index.js",
   "types": "index.d.ts",

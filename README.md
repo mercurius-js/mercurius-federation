@@ -1,16 +1,16 @@
-# @mercurius/federation
+# @mercuriusjs/federation
 
 A module to add Apollo Federation v1 metadata info to a schema.
 
 ## Quick start
 
 ```bash
-npm i fastify @mercurius/federation
+npm i fastify @mercuriusjs/federation
 ```
 
 ```js
 const Fastify = require('fastify')
-const { mercuriusFederationPlugin } = require('@mercurius/federation')
+const { mercuriusFederationPlugin } = require('@mercuriusjs/federation')
 
 const users = {
   1: {
@@ -91,7 +91,7 @@ app.register(mercurius, {
 A fastify plugin to create a `mercurius` server that expose the `federation` directives.
 
 ```javascript
-const { mercuriusFederationPlugin } = require('@mercurius/federation')
+const { mercuriusFederationPlugin } = require('@mercuriusjs/federation')
 
 const schema = ...
 const resolvers = ...
