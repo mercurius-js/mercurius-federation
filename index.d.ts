@@ -10,7 +10,7 @@ export interface buildFederationSchemaOptions {
 }
 
 export type MercuriusFederationOptions = Omit<MercuriusOptions, 'schema'> & {
-  schema: string | DocumentNode
+  schema: string | DocumentNode | Array<DocumentNode>
 }
 
 export declare const mercuriusFederationPlugin: (
@@ -22,6 +22,6 @@ export declare const mercuriusFederationPlugin: (
  * Builds schema with support for federation mode.
  */
 export declare const buildFederationSchema: (
-  schema: string | DocumentNode,
+  schema: string | DocumentNode | Array<DocumentNode>,
   opts?: buildFederationSchemaOptions
 ) => GraphQLSchema

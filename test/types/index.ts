@@ -17,8 +17,15 @@ const schema = `
     }
   `
 
+const schema2 = `
+    extend type Query {
+      you: User
+    }
+  `
+
 expectType<GraphQLSchema>(buildFederationSchema(schema))
 expectType<GraphQLSchema>(buildFederationSchema(gql(schema)))
+expectType<GraphQLSchema>(buildFederationSchema([gql(schema), gql(schema2)]))
 expectType<GraphQLSchema>(buildFederationSchema(schema, {}))
 expectType<GraphQLSchema>(buildFederationSchema(schema, { isGateway: true }))
 
