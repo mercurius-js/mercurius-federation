@@ -14,7 +14,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - name: Clear cache
-        run: npm cache clean
+        run: npm cache clean -–force
       - name: Install Dependencies
         run: npm install --ignore-scripts
       - name: Test
