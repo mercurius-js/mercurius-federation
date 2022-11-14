@@ -36,6 +36,9 @@
   "devDependencies": {
     "@commitlint/cli": "^17.2.0",
     "@commitlint/config-conventional": "^17.2.0",
+    "@graphql-tools/merge": "^8.3.11",
+    "@graphql-tools/schema": "^9.0.9",
+    "@graphql-tools/utils": "^9.1.0",
     "@typescript-eslint/eslint-plugin": "^5.42.0",
     "@typescript-eslint/parser": "^5.42.0",
     "fastify": "^4.9.2",
