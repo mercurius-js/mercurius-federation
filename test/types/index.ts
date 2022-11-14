@@ -1,5 +1,6 @@
 import { expectType, expectError } from 'tsd'
 import Fastify from 'fastify'
+import gql from 'graphql-tag'
 import { GraphQLSchema } from 'graphql/index'
 
 import { buildFederationSchema, mercuriusFederationPlugin } from '../../index'
@@ -16,7 +17,15 @@ const schema = `
     }
   `
 
+const schema2 = `
+    extend type Query {
+      you: User
+    }
+  `
+
 expectType<GraphQLSchema>(buildFederationSchema(schema))
+expectType<GraphQLSchema>(buildFederationSchema(gql(schema)))
+expectType<GraphQLSchema>(buildFederationSchema([gql(schema), gql(schema2)]))
 expectType<GraphQLSchema>(buildFederationSchema(schema, {}))
 expectType<GraphQLSchema>(buildFederationSchema(schema, { isGateway: true }))
 
