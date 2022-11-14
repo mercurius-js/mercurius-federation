@@ -1195,3 +1195,44 @@ test('buildFederationSchema with extension directive', async t => {
     t.fail('schema built with errors')
   }
 })
+
+test('should support directives import syntax', async (t) => {
+  const app = Fastify()
+
+  const schema = `
+    extend schema
+      @link(url: "https://specs.apollo.dev/federation/v2.0",
+        import: ["@key", "@shareable", "@override"])
+    extend type Query {
+      hello: String
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      hello: () => 'world'
+    }
+  }
+
+  app.register(GQL, {
+    schema,
+    resolvers,
+    federationMetadata: true
+  })
+
+  await app.ready()
+
+  const query = '{ _service { sdl } }'
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _service: {
+        sdl: schema
+      }
+    }
+  })
+})
