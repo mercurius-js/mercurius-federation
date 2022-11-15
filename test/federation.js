@@ -2,10 +2,20 @@
 
 const { test } = require('tap')
 const Fastify = require('fastify')
-const { printSchema } = require('graphql')
+const { printSchema, defaultFieldResolver } = require('graphql')
 const WebSocket = require('ws')
 const mq = require('mqemitter')
 const GQL = require('mercurius')
+
+const { makeExecutableSchema } = require('@graphql-tools/schema')
+const { mergeResolvers } = require('@graphql-tools/merge')
+const {
+  MapperKind,
+  mapSchema,
+  getDirectives,
+  printSchemaWithDirectives,
+  getResolversFromSchema
+} = require('@graphql-tools/utils')
 
 const buildFederationSchema = require('../lib/federation')
 
@@ -1194,4 +1204,106 @@ test('buildFederationSchema with extension directive', async t => {
   } catch (err) {
     t.fail('schema built with errors')
   }
+})
+
+test('should support directives import syntax', async (t) => {
+  const app = Fastify()
+
+  const schema = `
+    extend schema
+      @link(url: "https://specs.apollo.dev/federation/v2.0",
+        import: ["@key", "@shareable", "@override"])
+    extend type Query {
+      hello: String
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      hello: () => 'world'
+    }
+  }
+
+  app.register(GQL, {
+    schema,
+    resolvers,
+    federationMetadata: true
+  })
+
+  await app.ready()
+
+  const query = '{ _service { sdl } }'
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _service: {
+        sdl: schema
+      }
+    }
+  })
+})
+
+const upperDirectiveTypeDefs = 'directive @upper on FIELD_DEFINITION'
+function upperDirectiveTransformer (schema) {
+  return mapSchema(schema, {
+    [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
+      const directives = getDirectives(schema, fieldConfig)
+      for (const directive of directives) {
+        if (directive.name === 'upper') {
+          const { resolve = defaultFieldResolver } = fieldConfig
+          fieldConfig.resolve = async function (source, args, context, info) {
+            const result = await resolve(source, args, context, info)
+            if (typeof result === 'string') {
+              return result.toUpperCase()
+            }
+            return result
+          }
+          return fieldConfig
+        }
+      }
+    }
+  })
+}
+
+test('federation support using schema from buildFederationSchema and custom directives', async (t) => {
+  const app = Fastify()
+  const schema = `
+    ${upperDirectiveTypeDefs}
+    
+    type Query {
+      foo: String @upper
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      foo: () => 'bar'
+    }
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  const executableSchema = makeExecutableSchema({
+    typeDefs: printSchemaWithDirectives(federationSchema),
+    resolvers: mergeResolvers([getResolversFromSchema(federationSchema), resolvers])
+  })
+
+  app.register(GQL, {
+    schema: executableSchema,
+    schemaTransforms: [upperDirectiveTransformer]
+  })
+
+  await app.ready()
+
+  let query = '{ _service { sdl } }'
+  let res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
+  t.same(JSON.parse(res.body), { data: { _service: { sdl: schema } } })
+
+  query = 'query { foo }'
+  res = await app.inject({ method: 'POST', url: '/graphql', body: { query } })
+  t.same(JSON.parse(res.body), { data: { foo: 'BAR' } })
 })
