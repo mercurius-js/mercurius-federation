@@ -105,7 +105,7 @@ app.register(mercuriusFederationPlugin, {
 
 #### options
 Uses the same [options](https://mercurius.dev/#/docs/api/options?id=plugin-options) of `mercurius` but
-it requires a `string` for `schema` attribute. 
+it requires a `string`, `DocumentNode` or an Array of `DocumentNode` for `schema` attribute. 
 
 ### buildFederationSchema
 
@@ -113,6 +113,6 @@ Create a schema object that can be used in a federated environment
 
 `(schema,  opts) => GraphQLSchema`
 
-- `schema` string: the source schema
+- `schema` string | DocumentNode | Array<DocumentNode>: the source schema
 - `opts` object:
   - `isGateway` boolean: If enabled create a schema compatible with the `gateway`, Default 'false'

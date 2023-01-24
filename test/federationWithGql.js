@@ -2,21 +2,11 @@
 
 const { test } = require('tap')
 const Fastify = require('fastify')
-const { printSchema, defaultFieldResolver } = require('graphql')
+const { printSchema } = require('graphql')
 const WebSocket = require('ws')
 const mq = require('mqemitter')
-const GQL = require('mercurius')
-
-const { makeExecutableSchema } = require('@graphql-tools/schema')
-const { mergeResolvers } = require('@graphql-tools/merge')
-const {
-  MapperKind,
-  mapSchema,
-  getDirectives,
-  printSchemaWithDirectives,
-  getResolversFromSchema
-} = require('@graphql-tools/utils')
-
+const mercurius = require('mercurius')
+const gql = require('graphql-tag')
 const buildFederationSchema = require('../lib/federation')
 
 test('federation support using schema from buildFederationSchema', async t => {
@@ -36,7 +26,6 @@ test('federation support using schema from buildFederationSchema', async t => {
       username: String
     }
   `
-
   const resolvers = {
     Query: {
       me: () => ({
@@ -59,9 +48,9 @@ test('federation support using schema from buildFederationSchema', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -70,6 +59,7 @@ test('federation support using schema from buildFederationSchema', async t => {
 
   let query = '{ _service { sdl } }'
   let res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
+
   t.same(JSON.parse(res.body), { data: { _service: { sdl: schema } } })
 
   query = '{ me { id name username } }'
@@ -109,9 +99,9 @@ test('a normal schema can be run in federated mode', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -155,9 +145,9 @@ test('a schema can be run in federated mode when Query is not defined', async t 
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -214,9 +204,9 @@ test('entities resolver returns correct value', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -289,9 +279,9 @@ test('entities resolver returns correct value with async resolver', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -355,9 +345,9 @@ test('entities resolver returns user default resolver if resolveReference is not
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -421,9 +411,9 @@ test('entities resolver throws an error if reference type name not in schema', a
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -472,7 +462,7 @@ test('buildFederationSchema function adds stub types', async t => {
     directive @customdir on FIELD_DEFINITION
   `
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
   t.matchSnapshot(printSchema(federationSchema))
 })
@@ -500,7 +490,7 @@ test('buildFederationSchema works correctly with multiple type extensions', asyn
     }
   `
   try {
-    buildFederationSchema(schema)
+    buildFederationSchema(gql(schema))
     t.pass('schema built without errors')
   } catch (err) {
     t.fail('it should not throw errors', err)
@@ -534,7 +524,7 @@ test('buildFederationSchema ignores UniqueDirectivesPerLocationRule when validat
     }
   `
   try {
-    buildFederationSchema(schema)
+    buildFederationSchema(gql(schema))
     t.pass('schema built without errors')
   } catch (err) {
     t.fail('it should not throw errors', err)
@@ -564,7 +554,7 @@ test('buildFederationSchema still validate schema for errors (1 error)', async t
     }
   `
   try {
-    buildFederationSchema(schema)
+    buildFederationSchema(gql(schema))
     t.fail('it should throw validation error')
   } catch (err) {
     // expected error: Field "User.id" can only be defined once.
@@ -596,7 +586,7 @@ test('buildFederationSchema still validate schema for errors (multiple error)', 
     }
   `
   try {
-    buildFederationSchema(schema)
+    buildFederationSchema(gql(schema))
     t.fail('it should throw validation error')
   } catch (err) {
     // expected errors:
@@ -652,9 +642,9 @@ test('mutation works with federation support', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -780,9 +770,9 @@ test('subscription server sends update to subscriptions', t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers,
     subscription: {
@@ -938,9 +928,9 @@ test('federation supports loader for __resolveReference function', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers,
     loaders
@@ -1010,9 +1000,9 @@ test('federation schema is built correctly with type extension', async t => {
     }
   `
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema
   })
 
@@ -1070,9 +1060,9 @@ test("basic federation support with 'schema' in the schema", async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(schema)
+  const federationSchema = buildFederationSchema(gql(schema))
 
-  app.register(GQL, {
+  app.register(mercurius, {
     schema: federationSchema,
     resolvers
   })
@@ -1121,7 +1111,7 @@ test('buildFederationSchema remove some directive in isGateway mode', async t =>
     }
   `
   try {
-    const resultGateway = buildFederationSchema(schema, { isGateway: true })
+    const resultGateway = buildFederationSchema(gql(schema), { isGateway: true })
 
     const printedSchema = printSchema(resultGateway)
 
@@ -1179,7 +1169,7 @@ test('buildFederationSchema thrown an error on duplicated directive that with di
     }
   `
   try {
-    buildFederationSchema(schema, { isGateway: true })
+    buildFederationSchema(gql(schema), { isGateway: true })
     t.fail('schema built without errors')
   } catch (err) {
     t.same(
@@ -1198,112 +1188,10 @@ test('buildFederationSchema with extension directive', async t => {
     }
   `
   try {
-    const resultGateway = buildFederationSchema(schema)
+    const resultGateway = buildFederationSchema(gql(schema))
     const printedSchema = printSchema(resultGateway)
     t.ok(printedSchema.includes('directive @extends on OBJECT | INTERFACE'))
   } catch (err) {
     t.fail('schema built with errors')
   }
-})
-
-test('should support directives import syntax', async (t) => {
-  const app = Fastify()
-
-  const schema = `
-    extend schema
-      @link(url: "https://specs.apollo.dev/federation/v2.0",
-        import: ["@key", "@shareable", "@override"])
-    extend type Query {
-      hello: String
-    }
-  `
-
-  const resolvers = {
-    Query: {
-      hello: () => 'world'
-    }
-  }
-
-  app.register(GQL, {
-    schema,
-    resolvers,
-    federationMetadata: true
-  })
-
-  await app.ready()
-
-  const query = '{ _service { sdl } }'
-  const res = await app.inject({
-    method: 'GET',
-    url: `/graphql?query=${query}`
-  })
-
-  t.same(JSON.parse(res.body), {
-    data: {
-      _service: {
-        sdl: schema
-      }
-    }
-  })
-})
-
-const upperDirectiveTypeDefs = 'directive @upper on FIELD_DEFINITION'
-function upperDirectiveTransformer (schema) {
-  return mapSchema(schema, {
-    [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
-      const directives = getDirectives(schema, fieldConfig)
-      for (const directive of directives) {
-        if (directive.name === 'upper') {
-          const { resolve = defaultFieldResolver } = fieldConfig
-          fieldConfig.resolve = async function (source, args, context, info) {
-            const result = await resolve(source, args, context, info)
-            if (typeof result === 'string') {
-              return result.toUpperCase()
-            }
-            return result
-          }
-          return fieldConfig
-        }
-      }
-    }
-  })
-}
-
-test('federation support using schema from buildFederationSchema and custom directives', async (t) => {
-  const app = Fastify()
-  const schema = `
-    ${upperDirectiveTypeDefs}
-    
-    type Query {
-      foo: String @upper
-    }
-  `
-
-  const resolvers = {
-    Query: {
-      foo: () => 'bar'
-    }
-  }
-
-  const federationSchema = buildFederationSchema(schema)
-
-  const executableSchema = makeExecutableSchema({
-    typeDefs: printSchemaWithDirectives(federationSchema),
-    resolvers: mergeResolvers([getResolversFromSchema(federationSchema), resolvers])
-  })
-
-  app.register(GQL, {
-    schema: executableSchema,
-    schemaTransforms: [upperDirectiveTransformer]
-  })
-
-  await app.ready()
-
-  let query = '{ _service { sdl } }'
-  let res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
-  t.same(JSON.parse(res.body), { data: { _service: { sdl: schema } } })
-
-  query = 'query { foo }'
-  res = await app.inject({ method: 'POST', url: '/graphql', body: { query } })
-  t.same(JSON.parse(res.body), { data: { foo: 'BAR' } })
 })
