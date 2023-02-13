@@ -6,6 +6,7 @@ const { printSchema, defaultFieldResolver } = require('graphql')
 const WebSocket = require('ws')
 const mq = require('mqemitter')
 const GQL = require('mercurius')
+const mercuriusWithFederation = require('../lib/plugin')
 
 const { makeExecutableSchema } = require('@graphql-tools/schema')
 const { mergeResolvers } = require('@graphql-tools/merge')
@@ -1223,11 +1224,9 @@ test('should support directives import syntax', async (t) => {
       hello: () => 'world'
     }
   }
-
-  app.register(GQL, {
+  app.register(mercuriusWithFederation, {
     schema,
-    resolvers,
-    federationMetadata: true
+    resolvers
   })
 
   await app.ready()
