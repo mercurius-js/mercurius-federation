@@ -1306,3 +1306,515 @@ test('federation support using schema from buildFederationSchema and custom dire
   res = await app.inject({ method: 'POST', url: '/graphql', body: { query } })
   t.same(JSON.parse(res.body), { data: { foo: 'BAR' } })
 })
+
+test('entities resolver returns correct value for interface', async (t) => {
+  const app = Fastify()
+  const schema = `
+    extend type Query {
+      product: Product
+    }
+    interface Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type BundleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+      productIds: [ID!]!
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      product: () => {
+        return {
+          id: '1',
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    },
+    Product: {
+      resolveType: () => {
+        return 'BundleProduct'
+      }
+    },
+    BundleProduct: {
+      __resolveReference: (reference) => {
+        return {
+          id: reference.id,
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    }
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  app.register(GQL, {
+    schema: federationSchema,
+    resolvers
+  })
+
+  await app.ready()
+
+  const query = `
+  {
+    _entities(representations: [{ __typename: "Product", id: "1"}]) {
+      __typename
+      ... on Product {
+        id
+        name
+      }
+      ... on BundleProduct {
+        productIds
+      }
+    }
+  }
+  `
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _entities: [{
+        __typename: 'BundleProduct',
+        id: '1',
+        name: 'bundle',
+        productIds: ['001', '002']
+      }]
+    }
+  })
+})
+
+test('entities resolver returns correct value for interface with async resolveType', async (t) => {
+  const app = Fastify()
+  const schema = `
+    extend type Query {
+      product: Product
+    }
+    interface Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type BundleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+      productIds: [ID!]!
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      product: () => {
+        return {
+          id: '1',
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    },
+    Product: {
+      resolveType: () => {
+        return Promise.resolve('BundleProduct')
+      }
+    },
+    BundleProduct: {
+      __resolveReference: (reference) => {
+        return {
+          id: reference.id,
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    }
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  app.register(GQL, {
+    schema: federationSchema,
+    resolvers
+  })
+
+  await app.ready()
+
+  const query = `
+  {
+    _entities(representations: [{ __typename: "Product", id: "1"}]) {
+      __typename
+      ... on Product {
+        id
+        name
+      }
+      ... on BundleProduct {
+        productIds
+      }
+    }
+  }
+  `
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _entities: [{
+        __typename: 'BundleProduct',
+        id: '1',
+        name: 'bundle',
+        productIds: ['001', '002']
+      }]
+    }
+  })
+})
+
+test('entities resolver returns correct value for interface with async resolveType and resolveReference', async (t) => {
+  const app = Fastify()
+  const schema = `
+    extend type Query {
+      product: Product
+    }
+    interface Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type BundleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+      productIds: [ID!]!
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      product: () => {
+        return {
+          id: '1',
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    },
+    Product: {
+      resolveType: () => {
+        return Promise.resolve('BundleProduct')
+      }
+    },
+    BundleProduct: {
+      __resolveReference: (reference) => {
+        return Promise.resolve({
+          id: reference.id,
+          name: 'bundle',
+          productIds: ['001', '002']
+        })
+      }
+    }
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  app.register(GQL, {
+    schema: federationSchema,
+    resolvers
+  })
+
+  await app.ready()
+
+  const query = `
+  {
+    _entities(representations: [{ __typename: "Product", id: "1"}]) {
+      __typename
+      ... on Product {
+        id
+        name
+      }
+      ... on BundleProduct {
+        productIds
+      }
+    }
+  }
+  `
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _entities: [{
+        __typename: 'BundleProduct',
+        id: '1',
+        name: 'bundle',
+        productIds: ['001', '002']
+      }]
+    }
+  })
+})
+
+test('entities resolver returns correct value for interface with async without definition of resolveReference', async (t) => {
+  const app = Fastify()
+  const schema = `
+    extend type Query {
+      product: Product
+    }
+    interface Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type BundleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+      productIds: [ID!]!
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      product: () => {
+        return {
+          id: '1',
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    },
+    Product: {
+      resolveType: () => {
+        return Promise.resolve('BundleProduct')
+      }
+    },
+    BundleProduct: {}
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  app.register(GQL, {
+    schema: federationSchema,
+    resolvers
+  })
+
+  await app.ready()
+
+  const query = `
+  {
+    _entities(representations: [{ __typename: "Product", id: "1"}]) {
+      __typename
+      ... on Product {
+        id
+      }
+    }
+  }
+  `
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _entities: [{
+        __typename: 'BundleProduct',
+        id: '1'
+      }]
+    }
+  })
+})
+
+test('entities resolver returns correct value for interface using isTypeOf method', async (t) => {
+  const app = Fastify()
+  const schema = `
+    extend type Query {
+      product: Product
+    }
+    interface Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type SingleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type BundleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+      productIds: [ID!]!
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      product: () => {
+        return {
+          __typename: 'BundleProduct',
+          id: '1',
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    },
+    SingleProduct: {
+      isTypeOf: () => {
+        return false
+      },
+      __resolveReference: (reference) => {
+        return {
+          id: reference.id,
+          name: 'single'
+        }
+      }
+    },
+    BundleProduct: {
+      isTypeOf: () => {
+        return true
+      },
+      __resolveReference: (reference) => {
+        return {
+          id: reference.id,
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    }
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  app.register(GQL, {
+    schema: federationSchema,
+    resolvers
+  })
+
+  await app.ready()
+
+  const query = `
+  {
+    _entities(representations: [{ __typename: "Product", id: "1"}]) {
+      __typename
+      ... on Product {
+        id
+        name
+      }
+      ... on BundleProduct {
+        productIds
+      }
+    }
+  }
+  `
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _entities: [{
+        __typename: 'BundleProduct',
+        id: '1',
+        name: 'bundle',
+        productIds: ['001', '002']
+      }]
+    }
+  })
+})
+
+test('entities resolver returns correct value for interface using isTypeOf as promise', async (t) => {
+  const app = Fastify()
+  const schema = `
+    extend type Query {
+      product: Product
+    }
+    interface Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type SingleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+    }
+    type BundleProduct implements Product @key(fields: "id") {
+      id: ID!
+      name: String!
+      productIds: [ID!]!
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      product: () => {
+        return {
+          __typename: 'BundleProduct',
+          id: '1',
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    },
+    SingleProduct: {
+      isTypeOf: () => {
+        return Promise.resolve(false)
+      },
+      __resolveReference: (reference) => {
+        return {
+          id: reference.id,
+          name: 'single'
+        }
+      }
+    },
+    BundleProduct: {
+      isTypeOf: () => {
+        return Promise.resolve(true)
+      },
+      __resolveReference: (reference) => {
+        return {
+          id: reference.id,
+          name: 'bundle',
+          productIds: ['001', '002']
+        }
+      }
+    }
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  app.register(GQL, {
+    schema: federationSchema,
+    resolvers
+  })
+
+  await app.ready()
+
+  const query = `
+  {
+    _entities(representations: [{ __typename: "Product", id: "1"}]) {
+      __typename
+      ... on Product {
+        id
+        name
+      }
+      ... on BundleProduct {
+        productIds
+      }
+    }
+  }
+  `
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.same(JSON.parse(res.body), {
+    data: {
+      _entities: [{
+        __typename: 'BundleProduct',
+        id: '1',
+        name: 'bundle',
+        productIds: ['001', '002']
+      }]
+    }
+  })
+})
