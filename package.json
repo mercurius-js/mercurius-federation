@@ -39,7 +39,7 @@
     "@commitlint/config-conventional": "^17.2.0",
     "@graphql-tools/merge": "^9.0.0",
     "@graphql-tools/schema": "^9.0.10",
-    "@graphql-tools/utils": "^9.1.1",
+    "@graphql-tools/utils": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
     "fastify": "^4.17.0",
