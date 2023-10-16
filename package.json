@@ -46,7 +46,7 @@
     "graphql-tag": "^2.12.6",
     "graphql-ws": "^5.11.2",
     "husky": "^8.0.2",
-    "lint-staged": "^14.0.0",
+    "lint-staged": "^15.0.1",
     "mqemitter": "^5.0.0",
     "snazzy": "^9.0.0",
     "standard": "^17.0.0",
