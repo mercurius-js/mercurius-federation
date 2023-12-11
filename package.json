@@ -40,7 +40,7 @@
     "@graphql-tools/merge": "^9.0.0",
     "@graphql-tools/schema": "^10.0.0",
     "@graphql-tools/utils": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.43.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
     "@typescript-eslint/parser": "^5.43.0",
     "fastify": "^4.17.0",
     "graphql-tag": "^2.12.6",
