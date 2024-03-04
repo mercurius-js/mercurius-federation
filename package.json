@@ -36,7 +36,7 @@
   "homepage": "https://github.com/mercurius-js/mercurius-federation#readme",
   "devDependencies": {
     "@commitlint/cli": "^19.0.3",
-    "@commitlint/config-conventional": "^18.0.0",
+    "@commitlint/config-conventional": "^19.0.3",
     "@graphql-tools/merge": "^9.0.0",
     "@graphql-tools/schema": "^10.0.0",
     "@graphql-tools/utils": "^10.0.0",
