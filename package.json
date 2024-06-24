@@ -61,7 +61,7 @@
     "*.{js,jsx}": "standard --cache --fix"
   },
   "dependencies": {
-    "@fastify/error": "^3.0.0",
+    "@fastify/error": "^4.0.0",
     "graphql": "^16.6.0",
     "mercurius": "^14.0.0"
   }
