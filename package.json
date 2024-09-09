@@ -23,7 +23,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mercurius-js/mercurius-federation"
+    "url": "git+https://github.com/mercurius-js/mercurius-federation.git"
   },
   "keywords": [
     "mercurius"
