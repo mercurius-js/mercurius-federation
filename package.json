@@ -63,6 +63,6 @@
   "dependencies": {
     "@fastify/error": "^4.0.0",
     "graphql": "^16.6.0",
-    "mercurius": "^15.0.0"
+    "mercurius": "^16.0.0"
   }
 }
