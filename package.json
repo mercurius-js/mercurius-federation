@@ -19,7 +19,7 @@
     "test:unit": "tap --jobs=1 test/*.js",
     "test:cov": "tap --jobs=1 --coverage-report=html test/*.js",
     "test:types": "tsd",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "repository": {
     "type": "git",
@@ -42,10 +42,10 @@
     "@graphql-tools/utils": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
     "@typescript-eslint/parser": "^5.43.0",
-    "fastify": "^5.0.0-alpha.4",
+    "fastify": "^5.0.0",
     "graphql-tag": "^2.12.6",
     "graphql-ws": "^6.0.1",
-    "husky": "^9.0.7",
+    "husky": "^9.1.7",
     "lint-staged": "^15.0.1",
     "mqemitter": "^7.0.0",
     "snazzy": "^9.0.0",
