@@ -8,7 +8,8 @@ const mq = require('mqemitter')
 const mercurius = require('mercurius')
 const gql = require('graphql-tag')
 const buildFederationSchema = require('../lib/federation')
-const { matchSnapshot } = require('./helpers/snapshotHelper')
+const Snap = require('@matteo.collina/snap')
+const snap = Snap(__filename)
 
 test('federation support using schema from buildFederationSchema', async t => {
   const app = Fastify()
@@ -465,7 +466,7 @@ test('buildFederationSchema function adds stub types', async t => {
 
   const federationSchema = buildFederationSchema(gql(schema))
 
-  matchSnapshot(printSchema(federationSchema), { name: 'federation-with-gql' })
+  await snap(printSchema(federationSchema), 'federation-with-gql')
 })
 
 test('buildFederationSchema works correctly with multiple type extensions', async t => {

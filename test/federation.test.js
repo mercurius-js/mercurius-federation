@@ -17,7 +17,8 @@ const {
   getResolversFromSchema
 } = require('@graphql-tools/utils')
 const buildFederationSchema = require('../lib/federation')
-const { matchSnapshot } = require('./helpers/snapshotHelper')
+const Snap = require('@matteo.collina/snap')
+const snap = Snap(__filename)
 
 test('federation support using schema from buildFederationSchema', async t => {
   const app = Fastify()
@@ -474,7 +475,7 @@ test('buildFederationSchema function adds stub types', async t => {
 
   const federationSchema = buildFederationSchema(schema)
 
-  matchSnapshot(printSchema(federationSchema), { name: 'federation' })
+  await snap(printSchema(federationSchema), { name: 'federation' })
 })
 
 test('buildFederationSchema works correctly with multiple type extensions', async t => {
