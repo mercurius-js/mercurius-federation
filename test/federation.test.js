@@ -1,13 +1,23 @@
 'use strict'
 
-const { test } = require('tap')
+const { test } = require('node:test')
 const Fastify = require('fastify')
-const { printSchema } = require('graphql')
+const { printSchema, defaultFieldResolver } = require('graphql')
 const WebSocket = require('ws')
 const mq = require('mqemitter')
-const mercurius = require('mercurius')
-const gql = require('graphql-tag')
+const GQL = require('mercurius')
+const mercuriusWithFederation = require('../lib/plugin')
+const { makeExecutableSchema } = require('@graphql-tools/schema')
+const { mergeResolvers } = require('@graphql-tools/merge')
+const {
+  MapperKind,
+  mapSchema,
+  getDirectives,
+  printSchemaWithDirectives,
+  getResolversFromSchema
+} = require('@graphql-tools/utils')
 const buildFederationSchema = require('../lib/federation')
+const { matchSnapshot } = require('./helpers/snapshotHelper')
 
 test('federation support using schema from buildFederationSchema', async t => {
   const app = Fastify()
@@ -26,6 +36,7 @@ test('federation support using schema from buildFederationSchema', async t => {
       username: String
     }
   `
+
   const resolvers = {
     Query: {
       me: () => ({
@@ -48,9 +59,9 @@ test('federation support using schema from buildFederationSchema', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -59,18 +70,17 @@ test('federation support using schema from buildFederationSchema', async t => {
 
   let query = '{ _service { sdl } }'
   let res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
-
-  t.same(JSON.parse(res.body), { data: { _service: { sdl: schema } } })
+  t.assert.deepStrictEqual(JSON.parse(res.body), { data: { _service: { sdl: schema } } })
 
   query = '{ me { id name username } }'
   res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: { me: { id: '1', name: 'John', username: '@john' } }
   })
 
   query = 'mutation { add(a: 11 b: 19) }'
   res = await app.inject({ method: 'POST', url: '/graphql', body: { query } })
-  t.same(JSON.parse(res.body), { data: { add: 30 } })
+  t.assert.deepStrictEqual(JSON.parse(res.body), { data: { add: 30 } })
 })
 
 test('a normal schema can be run in federated mode', async t => {
@@ -99,9 +109,9 @@ test('a normal schema can be run in federated mode', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -114,7 +124,7 @@ test('a normal schema can be run in federated mode', async t => {
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _service: {
         sdl: schema
@@ -145,9 +155,9 @@ test('a schema can be run in federated mode when Query is not defined', async t 
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -160,7 +170,7 @@ test('a schema can be run in federated mode when Query is not defined', async t 
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _service: {
         sdl: schema
@@ -204,9 +214,9 @@ test('entities resolver returns correct value', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -230,7 +240,7 @@ test('entities resolver returns correct value', async t => {
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [
         {
@@ -279,9 +289,9 @@ test('entities resolver returns correct value with async resolver', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -305,7 +315,7 @@ test('entities resolver returns correct value with async resolver', async t => {
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [
         {
@@ -345,9 +355,9 @@ test('entities resolver returns user default resolver if resolveReference is not
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -371,7 +381,7 @@ test('entities resolver returns user default resolver if resolveReference is not
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [
         {
@@ -411,9 +421,9 @@ test('entities resolver throws an error if reference type name not in schema', a
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -437,7 +447,7 @@ test('entities resolver throws an error if reference type name not in schema', a
     url: `/graphql?query=${query}`
   })
 
-  t.equal(
+  t.assert.strictEqual(
     JSON.parse(res.body).errors[0].message,
     'The _entities resolver tried to load an entity for type "Account", but no object type of that name was found in the schema'
   )
@@ -462,9 +472,9 @@ test('buildFederationSchema function adds stub types', async t => {
     directive @customdir on FIELD_DEFINITION
   `
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  t.matchSnapshot(printSchema(federationSchema))
+  matchSnapshot(printSchema(federationSchema), { name: 'federation' })
 })
 
 test('buildFederationSchema works correctly with multiple type extensions', async t => {
@@ -490,10 +500,10 @@ test('buildFederationSchema works correctly with multiple type extensions', asyn
     }
   `
   try {
-    buildFederationSchema(gql(schema))
-    t.pass('schema built without errors')
+    buildFederationSchema(schema)
+    t.assert.ok('schema built without errors')
   } catch (err) {
-    t.fail('it should not throw errors', err)
+    t.assert.fail(['it should not throw errors', err])
   }
 })
 
@@ -524,10 +534,10 @@ test('buildFederationSchema ignores UniqueDirectivesPerLocationRule when validat
     }
   `
   try {
-    buildFederationSchema(gql(schema))
-    t.pass('schema built without errors')
+    buildFederationSchema(schema)
+    t.assert.ok('schema built without errors')
   } catch (err) {
-    t.fail('it should not throw errors', err)
+    t.assert.fail(['it should not throw errors', err])
   }
 })
 
@@ -554,11 +564,11 @@ test('buildFederationSchema still validate schema for errors (1 error)', async t
     }
   `
   try {
-    buildFederationSchema(gql(schema))
-    t.fail('it should throw validation error')
+    buildFederationSchema(schema)
+    t.assert.fail('it should throw validation error')
   } catch (err) {
     // expected error: Field "User.id" can only be defined once.
-    t.pass('it should throw error')
+    t.assert.ok('it should throw error')
   }
 })
 
@@ -586,15 +596,15 @@ test('buildFederationSchema still validate schema for errors (multiple error)', 
     }
   `
   try {
-    buildFederationSchema(gql(schema))
-    t.fail('it should throw validation error')
+    buildFederationSchema(schema)
+    t.assert.fail('it should throw validation error')
   } catch (err) {
     // expected errors:
     // Field "User.id" can only be defined once.
     // Unknown type "Actions"
-    t.ok(err.errors)
-    t.equal(err.errors.length, 2)
-    t.pass('it should throw error')
+    t.assert.ok(err.errors)
+    t.assert.strictEqual(err.errors.length, 2)
+    t.assert.ok('it should throw error')
   }
 })
 
@@ -642,9 +652,9 @@ test('mutation works with federation support', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -660,7 +670,7 @@ test('mutation works with federation support', async t => {
     }
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       add: 30
     }
@@ -669,7 +679,7 @@ test('mutation works with federation support', async t => {
 
 test('subscription server sends update to subscriptions', t => {
   const app = Fastify()
-  t.teardown(() => app.close())
+  t.after(() => app.close())
 
   const sendTestQuery = () => {
     app.inject(
@@ -770,9 +780,9 @@ test('subscription server sends update to subscriptions', t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers,
     subscription: {
@@ -781,7 +791,7 @@ test('subscription server sends update to subscriptions', t => {
   })
 
   app.listen({ port: 0 }, err => {
-    t.error(err)
+    t.assert.ifError(err)
 
     const ws = new WebSocket(
       'ws://localhost:' + app.server.address().port + '/graphql',
@@ -791,7 +801,7 @@ test('subscription server sends update to subscriptions', t => {
       encoding: 'utf8',
       objectMode: true
     })
-    t.teardown(client.destroy.bind(client))
+    t.after(() => client.destroy.bind(client))
     client.setEncoding('utf8')
 
     client.write(
@@ -845,7 +855,7 @@ test('subscription server sends update to subscriptions', t => {
       const data = JSON.parse(chunk)
 
       if (data.id === 1 && data.type === 'data') {
-        t.equal(
+        t.assert.strictEqual(
           chunk,
           JSON.stringify({
             type: 'data',
@@ -862,7 +872,6 @@ test('subscription server sends update to subscriptions', t => {
         )
 
         client.end()
-        t.end()
       } else if (data.id === 2 && data.type === 'complete') {
         sendTestQuery()
       }
@@ -907,7 +916,7 @@ test('federation supports loader for __resolveReference function', async t => {
   const loaders = {
     User: {
       async __resolveReference (queries) {
-        t.same(queries, [
+        t.assert.deepEqual(queries, [
           {
             obj: {
               __typename: 'User',
@@ -928,9 +937,9 @@ test('federation supports loader for __resolveReference function', async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers,
     loaders
@@ -957,7 +966,7 @@ test('federation supports loader for __resolveReference function', async t => {
     }
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepEqual(JSON.parse(res.body), {
     data: {
       _entities: [
         {
@@ -1000,9 +1009,9 @@ test('federation schema is built correctly with type extension', async t => {
     }
   `
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema
   })
 
@@ -1014,7 +1023,7 @@ test('federation schema is built correctly with type extension', async t => {
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       topPosts: null
     }
@@ -1060,9 +1069,9 @@ test("basic federation support with 'schema' in the schema", async t => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -1075,7 +1084,7 @@ test("basic federation support with 'schema' in the schema", async t => {
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _service: {
         sdl: schema
@@ -1111,34 +1120,40 @@ test('buildFederationSchema remove some directive in isGateway mode', async t =>
     }
   `
   try {
-    const resultGateway = buildFederationSchema(gql(schema), { isGateway: true })
+    const resultGateway = buildFederationSchema(schema, { isGateway: true })
 
     const printedSchema = printSchema(resultGateway)
 
-    t.notOk(printedSchema.includes('directive @external on FIELD_DEFINITION'))
-    t.notOk(
-      printedSchema.includes(
+    t.assert.ok(
+      !printedSchema.includes('directive @external on FIELD_DEFINITION')
+    )
+    t.assert.ok(
+      !printedSchema.includes(
         'directive @provides(fields: _FieldSet!) on FIELD_DEFINITION'
       )
     )
-    t.notOk(
-      printedSchema.includes(
+    t.assert.ok(
+      !printedSchema.includes(
         'directive @key(fields: _FieldSet!) on OBJECT | INTERFACE'
       )
     )
-    t.notOk(printedSchema.includes('directive @extends on OBJECT | INTERFACE'))
-    t.notOk(printedSchema.includes('type _Service'))
-    t.notOk(
-      printedSchema.includes('_entities(representations: [_Any!]!): [_Entity]!')
+    t.assert.ok(
+      !printedSchema.includes('directive @extends on OBJECT | INTERFACE')
     )
-    t.notOk(printedSchema.includes('union _Entity = User | Post'))
-    t.ok(
+    t.assert.ok(!printedSchema.includes('type _Service'))
+    t.assert.ok(
+      !printedSchema.includes(
+        '_entities(representations: [_Any!]!): [_Entity]!'
+      )
+    )
+    t.assert.ok(!printedSchema.includes('union _Entity = User | Post'))
+    t.assert.ok(
       printedSchema.includes(
         'directive @requires(fields: _FieldSet!) on FIELD_DEFINITION'
       )
     )
   } catch (err) {
-    t.fail('it should not throw errors', err)
+    t.assert.fail(['it should not throw errors', err])
   }
 })
 
@@ -1169,10 +1184,10 @@ test('buildFederationSchema thrown an error on duplicated directive that with di
     }
   `
   try {
-    buildFederationSchema(gql(schema), { isGateway: true })
-    t.fail('schema built without errors')
+    buildFederationSchema(schema, { isGateway: true })
+    t.assert.fail('schema built without errors')
   } catch (err) {
-    t.same(
+    t.assert.deepStrictEqual(
       err.message,
       'Directive with a different definition but the same name "custom" already exists in the gateway schema'
     )
@@ -1188,12 +1203,112 @@ test('buildFederationSchema with extension directive', async t => {
     }
   `
   try {
-    const resultGateway = buildFederationSchema(gql(schema))
+    const resultGateway = buildFederationSchema(schema)
     const printedSchema = printSchema(resultGateway)
-    t.ok(printedSchema.includes('directive @extends on OBJECT | INTERFACE'))
+    t.assert.ok(printedSchema.includes('directive @extends on OBJECT | INTERFACE'))
   } catch (err) {
-    t.fail('schema built with errors')
+    t.assert.fail('schema built with errors')
   }
+})
+
+test('should support directives import syntax', async (t) => {
+  const app = Fastify()
+
+  const schema = `
+    extend schema
+      @link(url: "https://specs.apollo.dev/federation/v2.0",
+        import: ["@key", "@shareable", "@override"])
+    extend type Query {
+      hello: String
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      hello: () => 'world'
+    }
+  }
+  app.register(mercuriusWithFederation, {
+    schema,
+    resolvers
+  })
+
+  await app.ready()
+
+  const query = '{ _service { sdl } }'
+  const res = await app.inject({
+    method: 'GET',
+    url: `/graphql?query=${query}`
+  })
+
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
+    data: {
+      _service: {
+        sdl: schema
+      }
+    }
+  })
+})
+
+const upperDirectiveTypeDefs = 'directive @upper on FIELD_DEFINITION'
+function upperDirectiveTransformer (schema) {
+  return mapSchema(schema, {
+    [MapperKind.OBJECT_FIELD]: (fieldConfig) => {
+      const directives = getDirectives(schema, fieldConfig)
+      for (const directive of directives) {
+        if (directive.name === 'upper') {
+          const { resolve = defaultFieldResolver } = fieldConfig
+          fieldConfig.resolve = async function (source, args, context, info) {
+            const result = await resolve(source, args, context, info)
+            if (typeof result === 'string') {
+              return result.toUpperCase()
+            }
+            return result
+          }
+          return fieldConfig
+        }
+      }
+    }
+  })
+}
+
+test('federation support using schema from buildFederationSchema and custom directives', async (t) => {
+  const app = Fastify()
+  const schema = `
+    ${upperDirectiveTypeDefs}
+    
+    type Query {
+      foo: String @upper
+    }
+  `
+
+  const resolvers = {
+    Query: {
+      foo: () => 'bar'
+    }
+  }
+
+  const federationSchema = buildFederationSchema(schema)
+
+  const executableSchema = makeExecutableSchema({
+    typeDefs: printSchemaWithDirectives(federationSchema),
+    resolvers: mergeResolvers([getResolversFromSchema(federationSchema), resolvers])
+  })
+
+  app.register(GQL, {
+    schema: executableSchema,
+    schemaTransforms: [upperDirectiveTransformer]
+  })
+
+  await app.ready()
+
+  let query = '{ _service { sdl } }'
+  let res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
+  t.assert.deepStrictEqual(JSON.parse(res.body), { data: { _service: { sdl: schema } } })
+
+  query = 'query { foo }'
+  res = await app.inject({ method: 'POST', url: '/graphql', body: { query } })
+  t.assert.deepStrictEqual(JSON.parse(res.body), { data: { foo: 'BAR' } })
 })
 
 test('entities resolver returns correct value for interface', async (t) => {
@@ -1239,9 +1354,9 @@ test('entities resolver returns correct value for interface', async (t) => {
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -1267,7 +1382,7 @@ test('entities resolver returns correct value for interface', async (t) => {
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [{
         __typename: 'BundleProduct',
@@ -1322,9 +1437,9 @@ test('entities resolver returns correct value for interface with async resolveTy
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -1350,7 +1465,7 @@ test('entities resolver returns correct value for interface with async resolveTy
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [{
         __typename: 'BundleProduct',
@@ -1405,9 +1520,9 @@ test('entities resolver returns correct value for interface with async resolveTy
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -1433,7 +1548,7 @@ test('entities resolver returns correct value for interface with async resolveTy
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [{
         __typename: 'BundleProduct',
@@ -1480,9 +1595,9 @@ test('entities resolver returns correct value for interface with async without d
     BundleProduct: {}
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -1504,7 +1619,7 @@ test('entities resolver returns correct value for interface with async without d
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [{
         __typename: 'BundleProduct',
@@ -1571,9 +1686,9 @@ test('entities resolver returns correct value for interface using isTypeOf metho
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -1599,7 +1714,7 @@ test('entities resolver returns correct value for interface using isTypeOf metho
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [{
         __typename: 'BundleProduct',
@@ -1668,9 +1783,9 @@ test('entities resolver returns correct value for interface using isTypeOf as pr
     }
   }
 
-  const federationSchema = buildFederationSchema(gql(schema))
+  const federationSchema = buildFederationSchema(schema)
 
-  app.register(mercurius, {
+  app.register(GQL, {
     schema: federationSchema,
     resolvers
   })
@@ -1696,7 +1811,7 @@ test('entities resolver returns correct value for interface using isTypeOf as pr
     url: `/graphql?query=${query}`
   })
 
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: {
       _entities: [{
         __typename: 'BundleProduct',
