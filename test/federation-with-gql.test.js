@@ -466,7 +466,7 @@ test('buildFederationSchema function adds stub types', async t => {
 
   const federationSchema = buildFederationSchema(gql(schema))
 
-  await snap(printSchema(federationSchema), 'federation-with-gql')
+  await snap(printSchema(federationSchema))
 })
 
 test('buildFederationSchema works correctly with multiple type extensions', async t => {

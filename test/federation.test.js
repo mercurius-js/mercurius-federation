@@ -475,7 +475,7 @@ test('buildFederationSchema function adds stub types', async t => {
 
   const federationSchema = buildFederationSchema(schema)
 
-  await snap(printSchema(federationSchema), { name: 'federation' })
+  await snap(printSchema(federationSchema))
 })
 
 test('buildFederationSchema works correctly with multiple type extensions', async t => {
