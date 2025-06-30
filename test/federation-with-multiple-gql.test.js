@@ -1,6 +1,6 @@
 'use strict'
 
-const { test } = require('tap')
+const { test } = require('node:test')
 const Fastify = require('fastify')
 const mercurius = require('mercurius')
 const gql = require('graphql-tag')
@@ -62,15 +62,15 @@ test('federation support using schema from buildFederationSchema', async t => {
   let query = '{ _service { sdl } }'
   let res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
 
-  t.same(JSON.parse(res.body), { data: { _service: { sdl: `${schema1}${schema2}` } } })
+  t.assert.deepStrictEqual(JSON.parse(res.body), { data: { _service: { sdl: `${schema1}${schema2}` } } })
 
   query = '{ me { id name username } }'
   res = await app.inject({ method: 'GET', url: `/graphql?query=${query}` })
-  t.same(JSON.parse(res.body), {
+  t.assert.deepStrictEqual(JSON.parse(res.body), {
     data: { me: { id: '1', name: 'John', username: '@john' } }
   })
 
   query = 'mutation { add(a: 11 b: 19) }'
   res = await app.inject({ method: 'POST', url: '/graphql', body: { query } })
-  t.same(JSON.parse(res.body), { data: { add: 30 } })
+  t.assert.deepStrictEqual(JSON.parse(res.body), { data: { add: 30 } })
 })
