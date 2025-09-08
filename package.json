@@ -42,7 +42,7 @@
     "@graphql-tools/utils": "^10.0.0",
     "@matteo.collina/snap": "^0.3.0",
     "@typescript-eslint/eslint-plugin": "^5.43.0",
-    "@typescript-eslint/parser": "^5.43.0",
+    "@typescript-eslint/parser": "^8.42.0",
     "fastify": "^5.0.0",
     "graphql-tag": "^2.12.6",
     "graphql-ws": "^6.0.1",
