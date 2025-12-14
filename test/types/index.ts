@@ -1,9 +1,9 @@
 import { expectType, expectError } from 'tsd'
 import Fastify from 'fastify'
 import gql from 'graphql-tag'
-import { GraphQLSchema } from 'graphql/index'
+import { GraphQLSchema } from 'graphql/index.js'
 
-import { buildFederationSchema, mercuriusFederationPlugin } from '../../index'
+import { buildFederationSchema, mercuriusFederationPlugin } from '../../index.js'
 
 const schema = `
     extend type Query {
