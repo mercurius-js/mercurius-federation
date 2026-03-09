@@ -25,3 +25,15 @@ export declare const buildFederationSchema: (
   schema: string | DocumentNode | Array<DocumentNode>,
   opts?: buildFederationSchemaOptions
 ) => GraphQLSchema
+
+export type SchemaTransformer = (schema: GraphQLSchema) => GraphQLSchema
+
+/**
+ * Wraps an array of schema transformers so that `resolveReference` functions
+ * (set by mercurius on entity types) are preserved after the transformation.
+ * Use this instead of passing transformers directly to `schemaTransforms`
+ * when working with federated schemas.
+ */
+export declare const federationSchemaTransformer: (
+  transformers: SchemaTransformer[]
+) => SchemaTransformer
