@@ -39,7 +39,6 @@
     "@commitlint/config-conventional": "^20.0.0",
     "@graphql-tools/merge": "^9.0.0",
     "@graphql-tools/schema": "^10.0.0",
-    "@graphql-tools/utils": "^11.0.0",
     "@matteo.collina/snap": "^1.0.0",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
@@ -63,6 +62,7 @@
   },
   "dependencies": {
     "@fastify/error": "^4.0.0",
+    "@graphql-tools/utils": "^11.0.0",
     "graphql": "^16.6.0",
     "mercurius": "^16.0.0"
   }
