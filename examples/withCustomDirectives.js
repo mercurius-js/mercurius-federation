@@ -1,11 +1,8 @@
 'use strict'
 
 const Fastify = require('fastify')
-const { mapSchema, getDirective, MapperKind, printSchemaWithDirectives, getResolversFromSchema } = require('@graphql-tools/utils')
-const { mergeResolvers } = require('@graphql-tools/merge')
-const { makeExecutableSchema } = require('@graphql-tools/schema')
-const mercurius = require('mercurius')
-const { buildFederationSchema } = require('../')
+const { mapSchema, getDirective, MapperKind } = require('@graphql-tools/utils')
+const { mercuriusFederationPlugin } = require('../')
 
 const users = {
   1: {
@@ -20,7 +17,6 @@ const users = {
   }
 }
 
-const upperCaseDirectiveTypeDefs = 'directive @upper on FIELD_DEFINITION'
 const uppercaseTransformer = (schema) =>
   mapSchema(schema, {
     [MapperKind.FIELD]: (fieldConfig) => {
@@ -36,14 +32,14 @@ const uppercaseTransformer = (schema) =>
 
 const app = Fastify()
 const schema = `
-  ${upperCaseDirectiveTypeDefs}
+  directive @upper on FIELD_DEFINITION
 
   extend type Query {
     me: User
   }
 
   type User @key(fields: "id") {
-    id: ID! 
+    id: ID!
     name: String @upper
     username: String
   }
@@ -56,21 +52,15 @@ const resolvers = {
     }
   },
   User: {
-    __resolveReference: source => {
+    __resolveReference: (source) => {
       return users[source.id]
     }
   }
 }
 
-const federationSchema = buildFederationSchema(schema)
-
-const executableSchema = makeExecutableSchema({
-  typeDefs: printSchemaWithDirectives(federationSchema),
-  resolvers: mergeResolvers([getResolversFromSchema(federationSchema), resolvers])
-})
-
-app.register(mercurius, {
-  schema: executableSchema,
+app.register(mercuriusFederationPlugin, {
+  schema,
+  resolvers,
   schemaTransforms: [uppercaseTransformer],
   graphiql: true
 })
