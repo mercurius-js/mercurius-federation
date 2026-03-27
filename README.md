@@ -121,7 +121,7 @@ Create a schema object that can be used in a federated environment
 
 Wraps an array of schema transformers (e.g. custom directive transformers built with `@graphql-tools/utils` `mapSchema`) so that the `resolveReference` functions defined on entity types are preserved after the transformation.
 
-When mercurius applies `schemaTransforms`, `mapSchema` internally recreates every `GraphQLObjectType` via `new GraphQLObjectType(type.toConfig())`. Because `resolveReference` is a non-standard property set at runtime by mercurius, it is **lost** during this process. `federationSchemaTransformer` takes care of copying it back onto the new type instances after every transformer runs.
+When mercurius applies `schemaTransforms`, transformers such as `mapSchema` recreate `GraphQLObjectType` instances via `new GraphQLObjectType(type.toConfig())`. Because `resolveReference` is a non-standard property set at runtime by mercurius, it is **lost** during this process. `federationSchemaTransformer` takes care of copying it back onto the new type instances after every transformer runs.
 
 `(transformers: SchemaTransformer[]) => SchemaTransformer`
 
