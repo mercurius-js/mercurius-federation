@@ -3,7 +3,7 @@ import { FastifyInstance } from 'fastify'
 import { MercuriusOptions } from 'mercurius'
 import {
   DocumentNode
-} from 'graphql/language/ast';
+} from 'graphql/language/ast'
 
 export interface buildFederationSchemaOptions {
   isGateway?: boolean

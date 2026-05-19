@@ -3,22 +3,22 @@
   "version": "5.1.1",
   "description": "A plugin for mercurius federation",
   "main": "index.js",
-  "types": "index.d.ts",
+  "types": "types/index.d.ts",
   "files": [
     "index.js",
-    "index.d.ts",
+    "types/",
     "lib"
   ],
   "scripts": {
     "lint": "npm run lint:standard && npm run lint:typescript",
     "lint:fix": "standard --fix",
     "lint:standard": "standard | snazzy",
-    "lint:typescript": "standard --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin test/types/*.ts",
+    "lint:typescript": "standard --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin types/**/*.ts",
     "example": "node example/index.js",
     "test": "npm run lint && npm run test:unit && npm run test:types",
     "test:unit": "node --test",
     "test:cov": "c8 node --test",
-    "test:types": "tsd",
+    "test:types": "tstyche",
     "prepare": "husky"
   },
   "repository": {
@@ -52,11 +52,8 @@
     "mqemitter": "^7.0.0",
     "snazzy": "^9.0.0",
     "standard": "^17.0.0",
-    "tsd": "^0.33.0",
+    "tstyche": "^7.1.0",
     "ws": "^8.11.0"
-  },
-  "tsd": {
-    "directory": "test/types"
   },
   "lint-staged": {
     "*.{js,jsx}": "standard --cache --fix"
