@@ -29,7 +29,7 @@ expect(buildFederationSchema([gql(schema), gql(schema2)])).type.toBe<GraphQLSche
 expect(buildFederationSchema(schema, {})).type.toBe<GraphQLSchema>()
 expect(buildFederationSchema(schema, { isGateway: true })).type.toBe<GraphQLSchema>()
 
-expect(buildFederationSchema(schema, { isGateway: 'hello' })).type.toRaiseError()
+expect(buildFederationSchema).type.not.toBeCallableWith(schema, { isGateway: 'hello' })
 
 const app = Fastify()
 
@@ -38,9 +38,7 @@ app.register(mercuriusFederationPlugin, {
   graphiql: true
 })
 
-expect(() => {
-  app.register(mercuriusFederationPlugin, {
-    schema: buildFederationSchema(schema),
-    graphiql: true
-  })
-}).type.toRaiseError()
+expect(app.register).type.not.toBeCallableWith(mercuriusFederationPlugin, {
+  schema: buildFederationSchema(schema),
+  graphiql: true
+})
